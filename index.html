@@ -1,22 +1,56 @@
-<!doctype html><html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Lector de partitures</title><style>
-:root{font-family:system-ui,sans-serif;color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#16191d;color:#f4f5f6}header{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px;background:#252b31}button,input,textarea{font:inherit}button{background:#345d7b;border:0;border-radius:7px;color:white;padding:10px;cursor:pointer}button:disabled{opacity:.35}input[type=file]{max-width:240px}input[type=number]{width:76px;padding:8px;background:#333;color:white;border:1px solid #666;border-radius:5px}textarea{width:100%;min-height:80px;background:#222;color:white;border:1px solid #777;border-radius:6px;padding:9px}#viewer{height:calc(100dvh - 190px);overflow:auto;display:flex;align-items:flex-start;justify-content:center;background:#101114;padding:12px}canvas{max-width:100%;height:auto;box-shadow:0 2px 16px #000}#controls{display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;flex-wrap:wrap}#controls button{min-width:100px}#settings{padding:12px;background:#24292f}#settings[hidden]{display:none}small{color:#b7c1ca}#status{font-size:14px;color:#b9c9d6}label{display:inline-flex;align-items:center;gap:5px}#fullscreen{margin-left:auto}@media(max-width:650px){#viewer{height:calc(100dvh - 220px)}header{font-size:13px}button{padding:9px}}
+<!doctype html><html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Lector de partitures · v2</title><style>
+:root{font-family:system-ui,sans-serif;color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#16191d;color:#f4f5f6}header{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px;background:#252b31}button,input,textarea{font:inherit}button{background:#345d7b;border:0;border-radius:7px;color:white;padding:10px;cursor:pointer}button:disabled{opacity:.35}input[type=file]{max-width:240px}input[type=number]{width:76px;padding:8px;background:#333;color:white;border:1px solid #666;border-radius:5px}textarea{width:100%;min-height:80px;background:#222;color:white;border:1px solid #777;border-radius:6px;padding:9px}#viewer{height:calc(100dvh - 190px);overflow:auto;display:flex;align-items:flex-start;justify-content:center;background:#101114;padding:12px}#sheet{position:relative;display:inline-block;max-width:100%;flex-shrink:0}canvas{display:block;max-width:100%;height:auto;box-shadow:0 2px 16px #000}#marker{position:absolute;left:0;top:0;transform:translate(-100%,-50%);font-size:clamp(25px,5vw,48px);color:#e31d2d;font-weight:900;text-shadow:1px 1px 2px white,-1px -1px 2px white;pointer-events:none;z-index:3}#marker[hidden]{display:none}#viewer.picking canvas{cursor:crosshair}#pickHint{font-weight:bold;color:#ffd37c}#controls{display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;flex-wrap:wrap}#controls button{min-width:100px}#settings{padding:12px;background:#24292f}#settings[hidden]{display:none}small{color:#b7c1ca}#status{font-size:14px;color:#b9c9d6}label{display:inline-flex;align-items:center;gap:5px}#fullscreen{margin-left:auto}@media(max-width:650px){#viewer{height:calc(100dvh - 220px)}header{font-size:13px}button{padding:9px}}
 </style></head><body>
-<header><strong>🎼 Partitures</strong><input id="file" type="file" accept="application/pdf,.pdf"><button id="settingsToggle">Configurar salts</button><button id="fullscreen">Pantalla completa</button><span id="status">Obre un PDF</span></header>
-<section id="settings" hidden><div>Recorregut de pàgines (exemple: <code>1,2,3,2,4</code>). Cada línia és un pas; opcionalment afegeix <code>@50</code> per situar la vista al 50% d'alçada de la pàgina.</div><textarea id="sequence" spellcheck="false" placeholder="1,2,3,2,4&#10;o bé: 1@0,2@50,3@0"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><button id="apply">Aplicar recorregut</button><button id="addCurrent">Afegir pàgina actual</button><button id="export">Exportar salts</button><label><input type="file" id="import" accept="application/json,.json">Importar salts</label></div><small>Les dades es desen localment en aquest navegador, associades al nom i la mida del PDF. No s'envia cap fitxer a un servidor.</small></section>
-<main id="viewer"><canvas id="page"></canvas></main><nav id="controls"><button id="prev">◀ Anterior</button><span id="progress">Sense partitura</span><button id="next">Següent ▶</button><button id="reset">Inici</button></nav>
+<header><strong>🎼 Partitures</strong><input id="file" type="file" accept="application/pdf,.pdf"><button id="settingsToggle">Configurar salts</button><button id="pick">Marcar compàs</button><button id="fullscreen">Pantalla completa</button><span id="status">Obre un PDF</span></header>
+<section id="settings" hidden><div>Recorregut de pàgines (exemple: <code>1,2,3,2,4</code>). Cada línia és un pas; opcionalment afegeix <code>@50</code> per marcar el compàs al 50% d’alçada. Amb «Marcar compàs» pots seleccionar el punt exacte amb el dit.</div><textarea id="sequence" spellcheck="false" placeholder="1,2,3,2,4&#10;o bé: 1@0,2@50,3@0"></textarea><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><button id="apply">Aplicar recorregut</button><button id="addCurrent">Afegir pàgina actual</button><button id="export">Exportar salts</button><label><input type="file" id="import" accept="application/json,.json">Importar salts</label></div><small>Les dades es desen localment en aquest navegador, associades al nom i la mida del PDF. No s'envia cap fitxer a un servidor.</small></section>
+<main id="viewer"><div id="sheet"><canvas id="page"></canvas><span id="marker" hidden>➜</span></div></main><nav id="controls"><button id="prev">◀ Anterior</button><span id="progress">Sense partitura</span><span id="pickHint" hidden>Toca el compàs de destinació</span><button id="next">Següent ▶</button><button id="reset">Inici</button></nav>
 <script type="module">
 import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
-const $=id=>document.getElementById(id);let pdf=null,steps=[],index=0,key='',renderId=0;
+const $=id=>document.getElementById(id);let pdf=null,steps=[],index=0,key='',renderId=0,markerTimer=null,picking=false;
 function parse(s){return s.split(/[\s,;]+/).filter(Boolean).map(token=>{const m=token.match(/^(\d+)(?:@(\d+(?:\.\d+)?))?$/);if(!m)throw Error('Pas no vàlid: '+token);const page=Number(m[1]),pct=m[2]===undefined?0:Number(m[2]);if(!pdf||page<1||page>pdf.numPages||pct<0||pct>100)throw Error('Pàgina o percentatge fora de rang: '+token);return {page,pct}})}
 function serialize(){return steps.map(s=>s.page+(s.pct?'@'+s.pct:'' )).join(', ')}
 function persist(){if(key)localStorage.setItem('score-route:'+key,JSON.stringify(steps))}
-async function show(){if(!pdf||!steps.length)return;const id=++renderId,step=steps[index];$('progress').textContent=`Pas ${index+1}/${steps.length} · Pàgina ${step.page}/${pdf.numPages}`;$('prev').disabled=index===0;$('next').disabled=index===steps.length-1;const page=await pdf.getPage(step.page);const view=$('viewer'),raw=page.getViewport({scale:1});const scale=Math.min(2.5,Math.max(.5,(view.clientWidth-24)/raw.width));const viewport=page.getViewport({scale});const c=$('page');const ctx=c.getContext('2d');c.width=Math.ceil(viewport.width);c.height=Math.ceil(viewport.height);await page.render({canvasContext:ctx,viewport}).promise;if(id!==renderId)return;view.scrollTop=Math.max(0,(c.getBoundingClientRect().height-view.clientHeight)*step.pct/100);$('status').textContent=`Pàgina ${step.page}`}
+function hideMarker(){if(markerTimer)clearTimeout(markerTimer);markerTimer=null;$('marker').hidden=true}
+function markAt(pct, temporary=true){
+ const c=$('page'),m=$('marker');if(!c.clientHeight)return;
+ m.style.left='7%';m.style.top=pct+'%';m.hidden=false;
+ if(temporary)markerTimer=setTimeout(()=>{m.hidden=true;markerTimer=null},3000);
+}
+async function show(){
+ if(!pdf||!steps.length)return;
+ hideMarker();const id=++renderId,step=steps[index];
+ $('progress').textContent=`Pas ${index+1}/${steps.length} · Pàgina ${step.page}/${pdf.numPages}`;
+ $('prev').disabled=index===0;$('next').disabled=index===steps.length-1;
+ const page=await pdf.getPage(step.page);if(id!==renderId)return;
+ const view=$('viewer'),raw=page.getViewport({scale:1});
+ const scale=Math.min(2.5,Math.max(.25,Math.min((view.clientWidth-28)/raw.width,(view.clientHeight-28)/raw.height)));
+ const viewport=page.getViewport({scale});const c=$('page');
+ c.width=Math.ceil(viewport.width);c.height=Math.ceil(viewport.height);
+ await page.render({canvasContext:c.getContext('2d'),viewport}).promise;
+ if(id!==renderId)return;
+ view.scrollTop=0;view.scrollLeft=0;
+ if(step.pct>0)markAt(step.pct);
+ $('status').textContent=`Pàgina ${step.page}`;
+}
 function move(d){if(!pdf)return;index=Math.max(0,Math.min(steps.length-1,index+d));show()}
 $('file').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{$('status').textContent='Carregant…';pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;key=f.name+':'+f.size;const saved=localStorage.getItem('score-route:'+key);steps=saved?JSON.parse(saved):Array.from({length:pdf.numPages},(_,i)=>({page:i+1,pct:0}));$('sequence').value=serialize();index=0;show()}catch(err){alert('No s’ha pogut obrir el PDF: '+err.message)}});
 $('apply').onclick=()=>{try{const next=parse($('sequence').value);if(!next.length)throw Error('Cal indicar algun pas');steps=next;index=0;persist();show();$('settings').hidden=true}catch(e){alert(e.message)}};
 $('addCurrent').onclick=()=>{if(!pdf)return;const s=steps[index];$('sequence').value+=($('sequence').value.trim()?', ':'')+s.page+'@'+s.pct};
 $('settingsToggle').onclick=()=>$('settings').hidden=!$('settings').hidden;
+$('pick').onclick=()=>{
+ if(!pdf)return alert('Primer obre un PDF');
+ picking=!picking;$('viewer').classList.toggle('picking',picking);
+ $('pickHint').hidden=!picking;$('pick').textContent=picking?'Cancel·lar marca':'Marcar compàs';
+};
+$('page').addEventListener('click',e=>{
+ if(!picking||!pdf)return;
+ const rect=$('page').getBoundingClientRect();
+ const pct=Math.round(Math.max(0,Math.min(100,(e.clientY-rect.top)/rect.height*100))*10)/10;
+ steps[index].pct=pct;persist();$('sequence').value=serialize();
+ hideMarker();markAt(pct);picking=false;$('viewer').classList.remove('picking');
+ $('pickHint').hidden=true;$('pick').textContent='Marcar compàs';
+});
 $('next').onclick=()=>move(1);$('prev').onclick=()=>move(-1);$('reset').onclick=()=>{index=0;show()};
 $('fullscreen').onclick=()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()};
 document.addEventListener('keydown',e=>{if(['TEXTAREA','INPUT'].includes(document.activeElement.tagName))return;if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();move(1)}else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();move(-1)}});
