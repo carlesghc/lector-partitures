@@ -1,1 +1,29 @@
-const CACHE='lector-partitures-v5';const CORE=['./','./index.html','./manifest.webmanifest'];const PDFJS=['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs'];self.addEventListener('install',e=>{e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(CORE);await Promise.all(PDFJS.map(u=>c.add(u).catch(()=>{})));await self.skipWaiting()})())});self.addEventListener('activate',e=>e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('lector-partitures-')&&k!==CACHE).map(k=>caches.delete(k)));await self.clients.claim()})()));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;const url=new URL(e.request.url);if(url.origin!==self.location.origin&&!PDFJS.includes(url.href))return;e.respondWith((async()=>{const c=await caches.open(CACHE);const saved=await c.match(e.request);if(saved)return saved;const response=await fetch(e.request);if(response.ok||response.type==='opaque')c.put(e.request,response.clone()).catch(()=>{});return response})())});
+const CACHE = 'lector-partitures-v6';
+const CORE = ['./', './index.html', './manifest.webmanifest', './pdf.min.mjs', './pdf.worker.min.mjs'];
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await cache.addAll(CORE);
+    await self.skipWaiting();
+  })());
+});
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key.startsWith('lector-partitures-') && key !== CACHE).map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const saved = await cache.match(event.request);
+    if (saved) return saved;
+    const response = await fetch(event.request);
+    if (response.ok) cache.put(event.request, response.clone()).catch(() => {});
+    return response;
+  })());
+});
