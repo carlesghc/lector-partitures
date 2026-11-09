@@ -1,4 +1,4 @@
-const CACHE = 'lector-partitures-v7';
+const CACHE = 'lector-partitures-v8';
 const CORE = ['./', './index.html', './manifest.webmanifest', './pdf.min.mjs', './pdf.worker.min.mjs'];
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
